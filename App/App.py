@@ -14,13 +14,33 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 
-def annotate_sign(image, prediction,maxv):
+def annotate_sign(image, ind,max_list, encoding):
+    t = time.time()
+    global start_time
+    global curr_lab
+    global curr_val
+    prediction = encoding[encoding["Encoding"] == ind]["Label"].values[0]
+    maxv = np.max(max_list)
+
+
     left_location = int(50 * image.shape[0] / 480)
     right_location = int(100 * image.shape[1] / 640)
     font_scale = max(image.shape) / 800
-    idk = str(prediction) + " " + str(maxv)
-    cv2.putText(image, idk, (left_location, right_location),
-                cv2.FONT_HERSHEY_COMPLEX, font_scale, (255, 50, 0), 2, lineType=cv2.LINE_AA)
+
+    if t-start_time > .5:
+
+        idk = str(prediction) + " " + str(maxv)
+        cv2.putText(image, idk, (left_location, right_location),
+                    cv2.FONT_HERSHEY_COMPLEX, font_scale, (255, 50, 0), 2, lineType=cv2.LINE_AA)
+        start_time = time.time()
+
+        curr_lab = prediction
+        curr_val = ind
+    else:
+        idk = curr_lab + " " + str(max_list[0][ind])
+        cv2.putText(image, idk, (left_location, right_location),
+                    cv2.FONT_HERSHEY_COMPLEX, font_scale, (255, 50, 0), 2, lineType=cv2.LINE_AA)
+        print("test")
 
 
 def checkPoseDetection(image, frame_window, encoding, model):
@@ -31,22 +51,22 @@ def checkPoseDetection(image, frame_window, encoding, model):
         if(frame_count > frame_window):
             tmp = image.copy()
 
-            img1 = cv2.resize(tmp, dsize=(50,50), interpolation=cv2.INTER_CUBIC)
+            img1 = cv2.resize(tmp, dsize=(227,227), interpolation=cv2.INTER_CUBIC)
 
             test_image = img1.astype('float64')
 
             test_image -= np.mean(test_image, axis=0)
 
-            img1 = test_image.reshape((1, 50, 50, 3))
+            img1 = test_image.reshape((1, 227, 227, 3))
             tmp = model.predict(img1)
             ind = np.argmax(tmp)
 
-            maxv = np.max(tmp)
+
             #0.9649314
             prediction = encoding[encoding["Encoding"] == ind]["Label"].values[0]
             image.flags.writeable = True
 
-            annotate_sign(image, prediction, maxv)
+            annotate_sign(image, ind, tmp,encoding)
     except:
         image.flags.writeable = True
         left_location = int(50 * image.shape[0] / 480)
@@ -58,6 +78,7 @@ def checkPoseDetection(image, frame_window, encoding, model):
 
 
     video_display(image)
+
 
 def video_display(image):
     cv2.imshow('MediaPipe Pose', image)
@@ -71,16 +92,19 @@ if __name__ == "__main__":
 
     input_source = 'garo_pullup_back.mov'
     output_source = 'output_36.mp4'
+    start_time = time.time()
+    curr_lab = ""
+    curr_val = 0
 
-    this_width = 800
+    this_width = 1000
     this_height = 580
     monitor = {'top': 200, 'left': 0, 'width': this_width, 'height': this_height}
 
     # cap = cv2.VideoCapture(0)
     # hasFrame, image = cap.read()
 
-    model = tf.keras.models.load_model("lib/Models/GermanModel/german")
-    encoding = pd.read_csv("lib/datasets/key.csv")
+    model = tf.keras.models.load_model("lib/Models/AlexNet")
+    encoding = pd.read_csv("lib/datasets/key1.csv")
     vid_writer = cv2.VideoWriter(output_source, cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 10,
                                  (this_width, this_height))
 
