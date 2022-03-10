@@ -27,7 +27,7 @@ def annotate_sign(image, ind,max_list, encoding):
     right_location = int(100 * image.shape[1] / 640)
     font_scale = max(image.shape) / 800
 
-    if t-start_time > .5:
+    if t-start_time > .1:
 
         idk = str(prediction) + " " + str(maxv)
         cv2.putText(image, idk, (left_location, right_location),
@@ -81,7 +81,7 @@ def checkPoseDetection(image, frame_window, encoding, model):
 
 
 def video_display(image):
-    cv2.imshow('MediaPipe Pose', image)
+    cv2.imshow('AlphaSign', image)
     # cv2.imwrite('tmp/annotated_image' + str(counter) + '.png', image)
     vid_writer.write(image)
 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     # cap = cv2.VideoCapture(0)
     # hasFrame, image = cap.read()
 
-    model = tf.keras.models.load_model("lib/Models/AlexNet")
+    model = tf.keras.models.load_model("lib/Models/AlexNet_Negatives")
     encoding = pd.read_csv("lib/datasets/key1.csv")
     vid_writer = cv2.VideoWriter(output_source, cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 10,
                                  (this_width, this_height))
