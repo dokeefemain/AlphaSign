@@ -13,8 +13,8 @@ def one_hot(lab, vals):
 def data_gen():
     all_ann = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
     all_ann
-    height = 150
-    width = 150
+    height = 224
+    width = 224
     data = []
     labels = []
     path = "datasets/LISA/"
