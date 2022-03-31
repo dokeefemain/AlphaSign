@@ -15,8 +15,9 @@ def one_hot(lab, vals):
 def data_gen():
     all_ann = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
     all_ann
-    height = 224
-    width = 224
+    height = 229
+    width = 229
+
     data = []
     labels = []
 
@@ -24,7 +25,7 @@ def data_gen():
     test = 0
     import random
     sub_sample = random.sample(list(range(len(all_ann["Filename"]))),
-                               k=len(all_ann["Filename"]) - 2000)  # The data set is too big for my PC
+                               k=len(all_ann["Filename"])-1000)  # The data set is too big for my PC
     for i in sub_sample:
         file = all_ann["Filename"][i]
         sign = all_ann["Annotation tag"][i]
@@ -32,22 +33,23 @@ def data_gen():
         image = image.resize((width, height))
         image = np.asarray(image)
         data.append(image)
+
         labels.append(sign)
 
     # 1k random samples of images with no signs
-    with open("datasets/LISA/negatives/negatives.dat") as f:
-        negatives = [line.rstrip('\n') for line in f]
-    path_n = "datasets/LISA/negatives/"
-    import random
-    sub_sample = random.sample(list(range(len(negatives))), k=1000)
-    for i in sub_sample:
-        file = negatives[i]
-        sign = "None"
-        image = Image.open(path_n + file)
-        image = image.resize((width, height))
-        image = np.asarray(image)
-        data.append(image)
-        labels.append(sign)
+    # with open("datasets/LISA/negatives/negatives.dat") as f:
+    #     negatives = [line.rstrip('\n') for line in f]
+    # path_n = "datasets/LISA/negatives/"
+    # import random
+    # sub_sample = random.sample(list(range(len(negatives))), k=1000)
+    # for i in sub_sample:
+    #     file = negatives[i]
+    #     sign = "None"
+    #     image = Image.open(path_n + file)
+    #     image = image.resize((width, height))
+    #     image = np.asarray(image)
+    #     data.append(image)
+    #     labels.append(sign)
 
     signs = np.array(data)
     labels = np.array(labels)
@@ -55,6 +57,7 @@ def data_gen():
     # Randomize order
     s = np.arange(signs.shape[0])
     np.random.seed(43)
+
     np.random.shuffle(s)
     signs = signs[s]
     labels = labels[s]
@@ -171,6 +174,7 @@ def data_gen_bb():
     val_labels_e = np.array(one_hot(lab, val_labels))
     #test_labels_e = np.array(one_hot(lab, test_labels))
 
+
     tmp = pd.DataFrame()
     tmp["Label"] = lab
     tmp["Encoding"] = list(range(len(lab)))
@@ -187,6 +191,6 @@ def data_gen_bb():
     #np.save("datasets/test_bboxes.npy", test_bboxes)
     np.save("datasets/val_bboxes3k.npy", val_bboxes)
 
-data_gen_bb()
+data_gen()
 
 
