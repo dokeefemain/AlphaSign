@@ -11,7 +11,8 @@ class IRV2():
     def build_model(self):
         input_data = Input(shape=self.input_shape)
         stem = self.stem(input_data)
-        flatten_1 = Flatten()(stem)
+        ira = self.IRA(stem)
+        flatten_1 = Flatten()(ira)
         final = Dense(self.n_classes, activation= self.activation)(flatten_1)
         model = Model(inputs = input_data, outputs = final)
 
@@ -66,6 +67,41 @@ class IRV2():
         conc_2 = concatenate([conv_6_1, conv_8_2])
 
         return conc_2
+
+    #fig 16
+    def IRA(self, input_data):
+        relu_1 = Activation("relu")(input_data)
+
+        b_0 = Conv2D(32, (1,1), padding="same")(relu_1)
+        b_0 = BatchNormalization()(b_0)
+        b_0 = Activation("relu")(b_0)
+
+        b_1 = Conv2D(32, (1, 1), padding="same")(relu_1)
+        b_1 = BatchNormalization()(b_1)
+        b_1 = Activation("relu")(b_1)
+        b_1 = Conv2D(32, (3, 3), padding="same")(b_1)
+        b_1 = BatchNormalization()(b_1)
+        b_1 = Activation("relu")(b_1)
+
+        b_2 = Conv2D(32, (1, 1), padding="same")(relu_1)
+        b_2 = BatchNormalization()(b_2)
+        b_2 = Activation("relu")(b_2)
+        b_2 = Conv2D(48, (3, 3), padding="same")(b_2)
+        b_2 = BatchNormalization()(b_2)
+        b_2 = Activation("relu")(b_2)
+        b_2 = Conv2D(64, (3, 3), padding="same")(b_2)
+        b_2 = BatchNormalization()(b_2)
+        b_2 = Activation("relu")(b_2)
+
+        conc_1 = concatenate([b_0, b_1, b_2])
+
+        conv = Conv2D(384, (1,1), padding="same")(conc_1)
+
+        out = Add()([conv, relu_1])
+        relu_2 = Activation("relu")(out)
+
+        return relu_2
+
 
 
 ir = IRV2()

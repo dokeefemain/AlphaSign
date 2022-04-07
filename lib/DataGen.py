@@ -15,17 +15,18 @@ def one_hot(lab, vals):
 def data_gen():
     all_ann = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
     all_ann
-    height = 229
-    width = 229
+    height = 299
+    width = 299
 
     data = []
+
     labels = []
 
     path = "datasets/LISA/"
     test = 0
     import random
     sub_sample = random.sample(list(range(len(all_ann["Filename"]))),
-                               k=len(all_ann["Filename"])-1000)  # The data set is too big for my PC
+                               k=len(all_ann["Filename"])-1500)  # The data set is too big for my PC
     for i in sub_sample:
         file = all_ann["Filename"][i]
         sign = all_ann["Annotation tag"][i]
@@ -37,19 +38,19 @@ def data_gen():
         labels.append(sign)
 
     # 1k random samples of images with no signs
-    # with open("datasets/LISA/negatives/negatives.dat") as f:
-    #     negatives = [line.rstrip('\n') for line in f]
-    # path_n = "datasets/LISA/negatives/"
-    # import random
-    # sub_sample = random.sample(list(range(len(negatives))), k=1000)
-    # for i in sub_sample:
-    #     file = negatives[i]
-    #     sign = "None"
-    #     image = Image.open(path_n + file)
-    #     image = image.resize((width, height))
-    #     image = np.asarray(image)
-    #     data.append(image)
-    #     labels.append(sign)
+    with open("datasets/LISA/negatives/negatives.dat") as f:
+        negatives = [line.rstrip('\n') for line in f]
+    path_n = "datasets/LISA/negatives/"
+    import random
+    sub_sample = random.sample(list(range(len(negatives))), k=1000)
+    for i in sub_sample:
+        file = negatives[i]
+        sign = "None"
+        image = Image.open(path_n + file)
+        image = image.resize((width, height))
+        image = np.asarray(image)
+        data.append(image)
+        labels.append(sign)
 
     signs = np.array(data)
     labels = np.array(labels)
@@ -90,12 +91,12 @@ def data_gen():
 
     tmp.to_csv("datasets/key.csv", index=False)
 
-    np.save("datasets/X_train.npy", X_train)
-    np.save("datasets/X_test.npy", X_test)
-    np.save("datasets/X_val.npy", X_val)
-    np.save("datasets/y_train_e.npy", y_train_e)
-    np.save("datasets/y_test_e.npy", y_test_e)
-    np.save("datasets/y_val_e.npy", y_val_e)
+    np.save("datasets/X_train1.npy", X_train)
+    np.save("datasets/X_test1.npy", X_test)
+    np.save("datasets/X_val1.npy", X_val)
+    np.save("datasets/y_train_e1.npy", y_train_e)
+    np.save("datasets/y_test_e1.npy", y_test_e)
+    np.save("datasets/y_val_e1.npy", y_val_e)
 
 
 
