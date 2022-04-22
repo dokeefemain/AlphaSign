@@ -10,30 +10,29 @@ def one_hot(lab, vals):
         hot.append(lab.tolist().index(vals[i]))
     return hot
 
+
 def data_gen():
     all_ann = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
-    all_ann
-<<<<<<< HEAD
-    height = 224
-    width = 224
-=======
+    print(len(all_ann["Filename"]))
+    all_ann = all_ann.drop_duplicates(subset=["Filename"], keep=False, ignore_index=True)
+    print(len(all_ann["Filename"]))
+    all_ann = all_ann[all_ann["Occluded,On another road"] != "1,0"]
+    all_ann = all_ann.reset_index()
+
     height = 299
     width = 299
 
->>>>>>> 06b894229cea84d7d64a70ab10015e8c1ebe2d75
     data = []
 
     labels = []
     path = "datasets/LISA/"
+
     test = 0
     import random
-    sub_sample = random.sample(list(range(len(all_ann["Filename"]))),
-<<<<<<< HEAD
-                               k=len(all_ann["Filename"]) - 2000)  # The data set is too big for my PC
-=======
-                               k=len(all_ann["Filename"])-1500)  # The data set is too big for my PC
->>>>>>> 06b894229cea84d7d64a70ab10015e8c1ebe2d75
-    for i in sub_sample:
+    sub_sample = np.load("datasets/sample.npy")  # The data set is too big for my PC
+
+
+    for i in range(len(all_ann["Filename"])):
         file = all_ann["Filename"][i]
         sign = all_ann["Annotation tag"][i]
         image = Image.open(path + file)
@@ -47,7 +46,7 @@ def data_gen():
         negatives = [line.rstrip('\n') for line in f]
     path_n = "datasets/LISA/negatives/"
     import random
-    sub_sample = random.sample(list(range(len(negatives))), k=1000)
+    sub_sample = np.load("datasets/sample_negative.npy")
     for i in sub_sample:
         file = negatives[i]
         sign = "None"
@@ -76,12 +75,18 @@ def data_gen():
     X_train = X_train.astype('float64')
     X_val = X_val.astype('float64')
     X_test = X_test.astype('float64')
+    img = Image.fromarray(X_test[0].astype('uint8'), 'RGB')
+    img.save("img.png")
 
     # Normalize
     mean_image = np.mean(X_train, axis=0)
+    np.save("datasets/mean.npy",mean_image)
+    print(mean_image)
     X_train -= mean_image
     X_val -= mean_image
     X_test -= mean_image
+    img = Image.fromarray(X_test[0].astype('uint8'), 'RGB')
+    img.save("img_norm.png")
 
     # Encode
     lab = np.unique(labels)
@@ -93,54 +98,84 @@ def data_gen():
     tmp["Label"] = lab
     tmp["Encoding"] = list(range(len(lab)))
 
-    tmp.to_csv("datasets/key.csv", index=False)
-
-<<<<<<< HEAD
-=======
-    np.save("datasets/X_train1.npy", X_train)
-    np.save("datasets/X_test1.npy", X_test)
-    np.save("datasets/X_val1.npy", X_val)
-    np.save("datasets/y_train_e1.npy", y_train_e)
-    np.save("datasets/y_test_e1.npy", y_test_e)
-    np.save("datasets/y_val_e1.npy", y_val_e)
+    tmp.to_csv("datasets/keys_irv22.csv", index=False)
 
 
+    np.save("datasets/X_train_irv22.npy", X_train)
+    np.save("datasets/X_test_irv22.npy", X_test)
+    np.save("datasets/X_val_irv22.npy", X_val)
+    np.save("datasets/y_train_e_irv22.npy", y_train_e)
+    np.save("datasets/y_test_e_irv22.npy", y_test_e)
+    np.save("datasets/y_val_e_irv22.npy", y_val_e)
 
-def data_gen_bb():
+def data_gen_crop():
+    all = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
+    all_ann = all.drop_duplicates(subset=["Filename"], keep=False, ignore_index=True)
 
-    all_ann = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
-    all_ann
-    height = 150
-    width = 150
+    all_ann = all_ann[all_ann["Occluded,On another road"] != "1,0"]
+    all_ann = all_ann.reset_index()
+
+    height = 299
+    width = 299
+
     data = []
 
-    bboxes = []
     labels = []
-
     path = "datasets/LISA/"
+
     test = 0
     import random
-    sub_sample = random.sample(list(range(len(all_ann["Filename"]))),
-                               k=len(all_ann["Filename"]) - 1000)  # The data set is too big for my PC
-    np.save("datasets/sample.npy",sub_sample)
-    for i in sub_sample:
+    sub_sample = np.load("datasets/sample.npy")  # The data set is too big for my PC
+
+    for i in range(len(all_ann["Filename"])):
         file = all_ann["Filename"][i]
         sign = all_ann["Annotation tag"][i]
-
         image = Image.open(path + file)
-        h, w = image.height, image.width
         image = image.resize((width, height))
         image = np.asarray(image)
-
         data.append(image)
         labels.append(sign)
-        bboxes.append((float(all_ann['Upper left corner X'][i]) / w, float(all_ann['Upper left corner Y'][i]) / h,
-                       float(all_ann['Lower right corner X'][i]) / w, float(all_ann['Lower right corner Y'][i]) / h))
 
+    # 1k random samples of images with no signs
+    with open("datasets/LISA/negatives/negatives.dat") as f:
+        negatives = [line.rstrip('\n') for line in f]
+    path_n = "datasets/LISA/negatives/"
+    import random
+    sub_sample = np.load("datasets/sample_negative.npy")
+    for i in sub_sample:
+        file = negatives[i]
+        sign = "None"
+        image = Image.open(path_n + file)
+        image = image.resize((width, height))
+        image = np.asarray(image)
+        data.append(image)
+        labels.append(sign)
+
+    df = all[all["Occluded,On another road"] == "0,0"]
+    sample = random.sample(list(range(len(df["Filename"]))), k=1000)
+    path = "lib/datasets/LISA/"
+    for i in range(len(df["Filename"])):
+        file = df["Filename"][i]
+        sign = df["Annotation tag"][i]
+        image = Image.open(path + file)
+        rng = random.randint(2, 12)
+        negative = Image.open("lib/datasets/vid_negatives/Screenshot" + rng + ".png")
+        n_size, i_size = negative.size, image.size
+        bb = (df["Upper left corner X"][i], df["Upper left corner Y"][i], df["Lower right corner X"][i],
+              df["Lower right corner Y"][i])
+        tmp = image.crop(bb)
+        x_r = n_size[0] / i_size[0]
+        y_r = n_size[1] / i_size[1]
+        reshape = (int(bb[2] * x_r - bb[0] * x_r), int(bb[2] * x_r - bb[0] * x_r))
+        tmp = tmp.resize(reshape)
+        negative.paste(tmp, (int(bb[0] * x_r), int(bb[1] * y_r)))
+        negative.resize((width, height))
+        image = np.asarray(negative)
+        data.append(image)
+        labels.append(sign)
 
     signs = np.array(data)
     labels = np.array(labels)
-    bboxes = np.array(bboxes, dtype="float32")
 
     # Randomize order
     s = np.arange(signs.shape[0])
@@ -148,54 +183,99 @@ def data_gen_bb():
     np.random.shuffle(s)
     signs = signs[s]
     labels = labels[s]
-    mean_image = np.mean(signs, axis=0)
 
     from sklearn.model_selection import train_test_split
     from imblearn.over_sampling import RandomOverSampler
-    split = train_test_split(signs, labels, bboxes, test_size=0.25, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(signs, labels, test_size=0.2, random_state=1)
     del signs
-    # (train_signs, test_signs) = split[:2]
-    # (train_labels, test_labels) = split[2:4]
-    # (train_bboxes, test_bboxes) = split[4:]
-    # split = train_test_split(train_signs, train_labels, train_bboxes, test_size=0.25, random_state=42)
-    (train_signs, val_signs) = split[:2]
-    (train_labels, val_labels) = split[2:4]
-    (train_bboxes, val_bboxes) = split[4:]
-
-
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.25, random_state=1)
     # Preprocess
-    train_signs = train_signs.astype('float64')
-    val_signs = val_signs.astype('float64')
-    #test_signs = test_signs.astype('float64')
+    X_train = X_train.astype('float64')
+    X_val = X_val.astype('float64')
+    X_test = X_test.astype('float64')
+    img = Image.fromarray(X_test[0].astype('uint8'), 'RGB')
+    img.save("img.png")
 
     # Normalize
-
-
-    train_signs /= 150
-    val_signs /= 150
-    #test_signs /= 225
+    mean_image = np.mean(X_train, axis=0)
+    np.save("datasets/mean.npy", mean_image)
+    print(mean_image)
+    X_train -= mean_image
+    X_val -= mean_image
+    X_test -= mean_image
+    img = Image.fromarray(X_test[0].astype('uint8'), 'RGB')
+    img.save("img_norm.png")
 
     # Encode
     lab = np.unique(labels)
-    train_labels_e = np.array(one_hot(lab, train_labels))
-    val_labels_e = np.array(one_hot(lab, val_labels))
-    #test_labels_e = np.array(one_hot(lab, test_labels))
-
+    y_train_e = np.array(one_hot(lab, y_train))
+    y_val_e = np.array(one_hot(lab, y_val))
+    y_test_e = np.array(one_hot(lab, y_test))
 
     tmp = pd.DataFrame()
     tmp["Label"] = lab
     tmp["Encoding"] = list(range(len(lab)))
 
-    tmp.to_csv("datasets/bbkey.csv", index=False)
->>>>>>> 06b894229cea84d7d64a70ab10015e8c1ebe2d75
+    tmp.to_csv("datasets/keys_crop.csv", index=False)
 
-    np.save("datasets/X_train1.npy", X_train)
-    np.save("datasets/X_test1.npy", X_test)
-    np.save("datasets/X_val1.npy", X_val)
-    np.save("datasets/y_train_e1.npy", y_train_e)
-    np.save("datasets/y_test_e1.npy", y_test_e)
-    np.save("datasets/y_val_e1.npy", y_val_e)
+    np.save("datasets/X_train_crop.npy", X_train)
+    np.save("datasets/X_test_crop.npy", X_test)
+    np.save("datasets/X_val_crop.npy", X_val)
+    np.save("datasets/y_train_e_crop.npy", y_train_e)
+    np.save("datasets/y_test_e_crop.npy", y_test_e)
+    np.save("datasets/y_val_e_crop.npy", y_val_e)
 
-data_gen()
+from sklearn.preprocessing import LabelBinarizer
+def data_gen_bb():
+    Adata = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
+    height = 227
+    width = 227
+    data = []
+    labels = []
+    bboxes = []
+    imagePaths = []
+    path = "datasets/LISA/"
+    test = 0
+    import random
+    sub_sample = random.sample(list(range(len(Adata["Filename"]))), k=len(Adata["Filename"]) - 1000)
+    for i in range(len(Adata["Filename"])):
+        file = Adata["Filename"][i]
+        sign = Adata["Annotation tag"][i]
+        image = Image.open(path + file)
+        h, w = image.height, image.width
+        image = image.resize((width, height))
+        image = np.asarray(image)
+        data.append(image)
+        labels.append(sign)
+        bboxes.append((float(Adata['Upper left corner X'][i])/w,float(Adata['Upper left corner Y'][i])/h,float(Adata['Lower right corner X'][i])/w,float(Adata['Lower right corner Y'][i])/h))
+    data = np.array(data, dtype="float32") / 255.0
+    labels = np.array(labels)
+    bboxes = np.array(bboxes, dtype="float32")
+    lb = LabelBinarizer()
+    labels = lb.fit_transform(labels)
+    from sklearn.model_selection import train_test_split
+    split = train_test_split(data, labels, bboxes, test_size=0.20)
+    (X_train, X_test) = split[:2]
+    (y_train, y_test) = split[2:4]
+    (z_train, z_test) = split[4:6]
+    split = train_test_split(X_train, y_train, z_train, test_size=0.25)
+    (X_train, X_val) = split[:2]
+    (y_train, y_val) = split[2:4]
+    (z_train, z_val) = split[4:6]
+
+
+
+
+    np.save("datasets/X_train_bb.npy", X_train)
+    np.save("datasets/X_test_bb.npy", X_test)
+    np.save("datasets/X_val_bb.npy", X_val)
+    np.save("datasets/y_train_e_bb.npy", y_train)
+    np.save("datasets/y_test_e_bb.npy", y_test)
+    np.save("datasets/y_val_e_bb.npy", y_val)
+    np.save("datasets/z_train_bb.npy", z_train)
+    np.save("datasets/z_test_bb.npy", z_test)
+    np.save("datasets/z_val_bb.npy", z_val)
+
+data_gen_crop()
 
 

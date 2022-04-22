@@ -27,37 +27,41 @@ def annotate_sign(image, ind,max_list, encoding):
     right_location = int(100 * image.shape[1] / 640)
     font_scale = max(image.shape) / 800
 
-    if t-start_time > .1:
+    # if t-start_time > .1:
+    # if maxv < 0.5:
+    #     prediction = "None"
 
-        idk = str(prediction) + " " + str(maxv)
-        cv2.putText(image, idk, (left_location, right_location),
-                    cv2.FONT_HERSHEY_COMPLEX, font_scale, (255, 50, 0), 2, lineType=cv2.LINE_AA)
-        start_time = time.time()
+    idk = str(prediction) + " " + str(maxv)
+    cv2.putText(image, idk, (left_location, right_location),
+                cv2.FONT_HERSHEY_COMPLEX, font_scale, (255, 50, 0), 2, lineType=cv2.LINE_AA)
+    start_time = time.time()
 
-        curr_lab = prediction
-        curr_val = ind
-    else:
-        idk = curr_lab + " " + str(max_list[0][ind])
-        cv2.putText(image, idk, (left_location, right_location),
-                    cv2.FONT_HERSHEY_COMPLEX, font_scale, (255, 50, 0), 2, lineType=cv2.LINE_AA)
-        print("test")
+    curr_lab = prediction
+    curr_val = ind
+    # else:
+    #     idk = curr_lab + " " + str(max_list[0][ind])
+    #     cv2.putText(image, idk, (left_location, right_location),
+    #                 cv2.FONT_HERSHEY_COMPLEX, font_scale, (255, 50, 0), 2, lineType=cv2.LINE_AA)
+    #     print("test")
 
 
 def checkPoseDetection(image, frame_window, encoding, model):
     #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image.flags.writeable = False
     global frame_count
+    global mean_image
     try:
         if(frame_count > frame_window):
+
             tmp = image.copy()
 
-            img1 = cv2.resize(tmp, dsize=(227,227), interpolation=cv2.INTER_CUBIC)
+            img1 = cv2.resize(tmp, dsize=(299,299), interpolation=cv2.INTER_CUBIC)
 
             test_image = img1.astype('float64')
 
-            test_image -= np.mean(test_image, axis=0)
+            test_image -= mean_image
 
-            img1 = test_image.reshape((1, 227, 227, 3))
+            img1 = test_image.reshape((1, 299, 299, 3))
             tmp = model.predict(img1)
             ind = np.argmax(tmp)
 
@@ -67,7 +71,8 @@ def checkPoseDetection(image, frame_window, encoding, model):
             image.flags.writeable = True
 
             annotate_sign(image, ind, tmp,encoding)
-    except:
+    except Exception as e:
+        print(e)
         image.flags.writeable = True
         left_location = int(50 * image.shape[0] / 480)
         font_scale = max(image.shape) / 800
@@ -95,16 +100,17 @@ if __name__ == "__main__":
     start_time = time.time()
     curr_lab = ""
     curr_val = 0
+    mean_image = np.load("lib/datasets/mean.npy")
 
-    this_width = 1000
-    this_height = 580
+    this_width = 800
+    this_height = 500
     monitor = {'top': 200, 'left': 0, 'width': this_width, 'height': this_height}
 
     # cap = cv2.VideoCapture(0)
     # hasFrame, image = cap.read()
 
-    model = tf.keras.models.load_model("lib/Models/AlexNet_Negatives")
-    encoding = pd.read_csv("lib/datasets/key1.csv")
+    model = tf.keras.models.load_model("lib/Models/IRV2_Final2")
+    encoding = pd.read_csv("lib/datasets/keys_vgg1.csv")
     vid_writer = cv2.VideoWriter(output_source, cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), 10,
                                  (this_width, this_height))
 
