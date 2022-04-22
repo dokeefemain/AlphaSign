@@ -153,13 +153,13 @@ def data_gen_crop():
 
     df = all[all["Occluded,On another road"] == "0,0"]
     sample = random.sample(list(range(len(df["Filename"]))), k=1000)
-    path = "lib/datasets/LISA/"
-    for i in range(len(df["Filename"])):
+    path = "datasets/LISA/"
+    for i in sample:
         file = df["Filename"][i]
         sign = df["Annotation tag"][i]
         image = Image.open(path + file)
         rng = random.randint(2, 12)
-        negative = Image.open("lib/datasets/vid_negatives/Screenshot" + rng + ".png")
+        negative = Image.open("datasets/vid_negatives/Screenshot" + rng + ".png")
         n_size, i_size = negative.size, image.size
         bb = (df["Upper left corner X"][i], df["Upper left corner Y"][i], df["Lower right corner X"][i],
               df["Lower right corner Y"][i])
