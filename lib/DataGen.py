@@ -109,14 +109,14 @@ def data_gen():
     np.save("datasets/y_val_e_irv22.npy", y_val_e)
 
 def data_gen_crop():
-    all = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
-    all_ann = all.drop_duplicates(subset=["Filename"], keep=False, ignore_index=True)
+    all1 = pd.read_csv("datasets/LISA/allAnnotations.csv", delimiter=';')
+    all_ann = all1.drop_duplicates(subset=["Filename"], keep=False, ignore_index=True)
 
     all_ann = all_ann[all_ann["Occluded,On another road"] != "1,0"]
     all_ann = all_ann.reset_index()
 
-    height = 299
-    width = 299
+    height = 227
+    width = 227
 
     data = []
 
@@ -125,14 +125,16 @@ def data_gen_crop():
 
     test = 0
     import random
-    sub_sample = np.load("datasets/sample.npy")  # The data set is too big for my PC
+    #sub_sample = np.load("datasets/sample.npy")  # The data set is too big for my PC
 
-    for i in range(len(all_ann["Filename"])):
+    #for i in range(len(all_ann["Filename"])):
+    for i in range(5):
         file = all_ann["Filename"][i]
         sign = all_ann["Annotation tag"][i]
         image = Image.open(path + file)
         image = image.resize((width, height))
         image = np.asarray(image)
+        print(image.shape)
         data.append(image)
         labels.append(sign)
 
@@ -141,25 +143,29 @@ def data_gen_crop():
         negatives = [line.rstrip('\n') for line in f]
     path_n = "datasets/LISA/negatives/"
     import random
-    sub_sample = np.load("datasets/sample_negative.npy")
+    #sub_sample = np.load("datasets/sample_negative.npy")
+    sub_sample = random.sample(list(range(len(negatives))), k=5)
+    np.save("sample_negatives.npy",np.array(sub_sample))
     for i in sub_sample:
         file = negatives[i]
         sign = "None"
         image = Image.open(path_n + file)
         image = image.resize((width, height))
         image = np.asarray(image)
+        print(image.shape)
         data.append(image)
         labels.append(sign)
 
-    df = all[all["Occluded,On another road"] == "0,0"]
-    sample = random.sample(list(range(len(df["Filename"]))), k=1000)
+    df = all1[all1["Occluded,On another road"] == "0,0"]
+    df = df[df.duplicated(subset=["Filename"], keep=False).tolist()].reset_index()
+    sample = random.sample(list(range(len(df["Filename"]))), k=5)
     path = "datasets/LISA/"
     for i in sample:
         file = df["Filename"][i]
         sign = df["Annotation tag"][i]
         image = Image.open(path + file)
         rng = random.randint(2, 12)
-        negative = Image.open("datasets/vid_negatives/Screenshot" + rng + ".png")
+        negative = Image.open("datasets/vid_negatives/Screenshot" + str(rng) + ".png")
         n_size, i_size = negative.size, image.size
         bb = (df["Upper left corner X"][i], df["Upper left corner Y"][i], df["Lower right corner X"][i],
               df["Lower right corner Y"][i])
@@ -168,9 +174,14 @@ def data_gen_crop():
         y_r = n_size[1] / i_size[1]
         reshape = (int(bb[2] * x_r - bb[0] * x_r), int(bb[2] * x_r - bb[0] * x_r))
         tmp = tmp.resize(reshape)
+
         negative.paste(tmp, (int(bb[0] * x_r), int(bb[1] * y_r)))
-        negative.resize((width, height))
+        negative = negative.convert("RGB")
+
+        negative = negative.resize((width, height))
+
         image = np.asarray(negative)
+
         data.append(image)
         labels.append(sign)
 
